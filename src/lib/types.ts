@@ -1,7 +1,6 @@
 export interface ListItem {
-    name: string;
-    count: number;
-    size: number;
-    type: 'bottle' | 'can' | 'box' | 'bag' | 'other';
+	name: string;
+	count: number;
+	size: number;
+	type: string;
 }
-

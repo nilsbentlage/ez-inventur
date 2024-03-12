@@ -3,6 +3,7 @@
 	import ListItem from '$lib/ListItem.svelte';
 
 	import templates from '$lib/templates';
+	import type { Updater } from 'svelte/store';
 
 	let newName = '';
 	let newType = 'bottle';
@@ -12,7 +13,7 @@
 
 	function addItem() {
 		if (newName === '') return;
-		items.update((items: ListItem) => [
+		items.update((items: Updater<ListItem[]>) => [
 			...items,
 			{ name: newName, count: 0, size: newSize, type: newType }
 		]);
@@ -21,14 +22,15 @@
 		newType = 'bottle';
 	}
 
-	function removeItem(item) {
+	function removeItem(item: ListItem) {
 		items.update((items) => items.filter((i) => i !== item));
 	}
 
-	function changeTemplate(event) {
-		const type = event.target.value;
+	function changeTemplate(event: Event): string {
+		const type = (event.target as HTMLSelectElement).value;
 		newSize = templates[type].default;
 		sizeLabel = templates[type].unit;
+		return sizeLabel;
 	}
 </script>
 
@@ -43,7 +45,8 @@
 			{/each}
 		</select>
 		<label for="new-size" id="new-size">
-			<input type="number" name="new-size" min="0.1" max="30" step="0.1" bind:value={newSize} />
+			Inhalt:
+			<input type="number" name="new-size" min="0.1" max="30" step="0.01" bind:value={newSize} />
 			{sizeLabel}</label
 		>
 
@@ -51,7 +54,7 @@
 	</form>
 	<ul>
 		{#each $items as item}
-			<ListItem {item} on:remove={() => removeItem(item)} />
+			<ListItem bind:item on:remove={() => removeItem(item)} />
 		{/each}
 	</ul>
 </main>
@@ -62,7 +65,7 @@
 		font-family: sans-serif;
 	}
 	ul {
-		padding: 1rem 0;
+		padding: 1em 0;
 		margin: 0;
 	}
 
@@ -70,32 +73,32 @@
 		display: grid;
 		grid-template-columns: 3fr 2fr 1fr;
 		grid-template-rows: repeat(2, 1fr);
-		grid-column-gap: 0.5rem;
-		grid-row-gap: 0.5rem;
+		grid-column-gap: 0.5em;
+		grid-row-gap: 0.5em;
 	}
 
 	h1 {
-		font-size: 1.5rem;
-		padding-bottom: 1rem;
-		margin-bottom: 1.5rem;
+		font-size: 1.5em;
+		padding-bottom: 1em;
+		margin-bottom: 1.5em;
 		border-bottom: 1px solid #ccc;
 	}
 
 	#new-name {
 		grid-area: 1 / 1 / 2 / 3;
-		font-size: 1.2rem;
-		padding: 0.25rem;
+		font-size: 1.2em;
+		padding: 0.25em;
 	}
 	#new-type {
 		grid-area: 2 / 1 / 3 / 2;
-		padding: 0.25rem;
+		padding: 0.25em;
 	}
 	#new-size {
 		grid-area: 2 / 2 / 3 / 3;
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		gap: 0.5rem;
+		gap: 0.5em;
 		margin-right: a;
 	}
 	#new-size input {
@@ -106,6 +109,29 @@
 	}
 	button {
 		grid-area: 1 / 3 / 3 / 4;
-		font-size: 1.25rem;
+		font-size: 1.25em;
+	}
+
+	input[type='number']::-webkit-outer-spin-button,
+	input[type='number']::-webkit-inner-spin-button {
+		-webkit-appearance: none;
+		margin: 0;
+	}
+	input[type='number'] {
+		-moz-appearance: textfield;
+	}
+
+	@media print {
+		main {
+			font-size: 14px;
+		}
+		form {
+			display: none;
+		}
+		ul {
+			padding: 0;
+			display: flex;
+			flex-direction: row;
+		}
 	}
 </style>
