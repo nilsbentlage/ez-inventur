@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { ListItem } from '$lib/types';
-	import { items } from '$lib/store';
+	import items from '$lib/stores/items';
 	export let item: ListItem;
 
 	import templates from '$lib/templates';
@@ -64,7 +64,7 @@
 		border: 1px solid #ccc;
 	}
 	.count {
-		width: 50px;
+		width: 2.25em;
 	}
 	.header {
 		flex-grow: 1;
@@ -85,7 +85,7 @@
 
 	.buttons > button {
 		aspect-ratio: 1;
-		width: 2em;
+		width: 2.25em;
 		height: auto;
 		display: inline-block;
 	}
@@ -155,11 +155,10 @@
 		li {
 			flex-direction: row;
 			border-inline: none;
-			margin-inline: 2em;
 			margin-top: 0;
 			border-top: none;
 			padding: 0;
-			flex-basis: 50%;
+			flex-basis: 48%;
 		}
 		input.count {
 			border: none;
