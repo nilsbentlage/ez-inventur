@@ -1,0 +1,12 @@
+version: '3.4'
+
+services:
+  inventur:
+    image: inventur
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+    ports:
+      - 5436:5436

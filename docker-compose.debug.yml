@@ -1,0 +1,14 @@
+version: '3.4'
+
+services:
+  inventur:
+    image: inventur
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: development
+    ports:
+      - 5436:5436
+      - 9229:9229
+    command: ["node", "--inspect=0.0.0.0:9229", "build"]

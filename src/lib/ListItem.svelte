@@ -64,7 +64,7 @@
 		border: 1px solid #ccc;
 	}
 	.count {
-		width: 2.25em;
+		width: clamp(2.25em, 33%, 4em);
 	}
 	.header {
 		flex-grow: 1;
