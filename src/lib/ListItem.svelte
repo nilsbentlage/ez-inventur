@@ -15,7 +15,7 @@
 	}
 
 	function deleteItem() {
-		items.update((items: ListItem[]) => items.filter((i) => i !== item));
+		items.update((items) => items.filter((i) => i !== item));
 		showModal = false;
 	}
 
@@ -61,7 +61,10 @@
 		list-style-type: none;
 		margin: 0.5em 0 0;
 		padding: 0.5em 1em;
-		border: 1px solid #ccc;
+		border: 1px solid #fff;
+		background-color: #eee;
+		box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+		border-radius: 0.5rem;
 	}
 	.count {
 		width: clamp(2.25em, 33%, 4em);
@@ -75,7 +78,7 @@
 
 	.title {
 		font-size: 1.25em;
-		padding-block: 0.5em;
+		padding-block: 0.25em;
 	}
 	.details {
 		font-size: 0.6em;
@@ -132,7 +135,7 @@
 		padding: 1em;
 		border-bottom: 1px solid #ccc;
 		background-color: white;
-		box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.2);
+		box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.1);
 	}
 	.modal-buttons > button {
 		margin: 0 0.5em;

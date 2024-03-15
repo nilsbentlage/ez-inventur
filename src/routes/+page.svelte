@@ -4,8 +4,9 @@
 
 	import ListItem from '$lib/ListItem.svelte';
 
+	import type { ListItem as ListItemType } from '$lib/types';
+
 	import templates from '$lib/templates';
-	import type { Updater } from 'svelte/store';
 
 	let newName = '';
 	let newType = 'bottle';
@@ -13,21 +14,16 @@
 
 	let sizeLabel = 'Liter';
 
-	let yourName = $settings.name;
-
 	function addItem() {
 		if (newName === '') return;
-		items.update((items: Updater<ListItem[]>) => [
-			...items,
-			{ name: newName, count: 0, size: newSize, type: newType }
-		]);
+		items.update((items) => [...items, { name: newName, count: 0, size: newSize, type: newType }]);
 		newName = '';
 		newSize = 0.3;
 		newType = 'bottle';
 	}
 
-	function removeItem(item: ListItem) {
-		items.update((items) => items.filter((i) => i !== item));
+	function removeItem(item: ListItemType) {
+		items.update((items) => items.filter((i: ListItemType) => i !== item));
 	}
 
 	function changeTemplate(event: Event): string {
@@ -76,7 +72,7 @@
 	<details>
 		<summary>Einstellungen</summary>
 		<section>
-			<h2>Neues Item hinzufügen</h2>
+			<h2>Neue Ware hinzufügen</h2>
 			<form action="" on:submit={() => addItem()}>
 				<input type="text" name="new-name" id="new-name" required bind:value={newName} />
 
@@ -98,7 +94,7 @@
 					{sizeLabel}</label
 				>
 
-				<button>ADD</button>
+				<button>OK</button>
 			</form>
 		</section>
 		<section class="actions">
@@ -111,6 +107,7 @@
 			<button on:click={resetAll}> Alle Items zurücksetzen </button>
 		</section>
 	</details>
+	<span class="darken"></span>
 </main>
 
 <style>
@@ -130,6 +127,7 @@
 		font-family: sans-serif;
 		font-size: large;
 		position: relative;
+		margin-inline: 1rem;
 	}
 
 	h1 {
@@ -220,7 +218,9 @@
 		width: 100%;
 		padding: 1rem;
 		background-color: white;
-		border: 1px solid red;
+		box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.2);
+		border-radius: 0.5rem 0.5rem 0 0;
+		z-index: 1;
 	}
 	summary {
 		font-weight: bold;
@@ -247,5 +247,18 @@
 		.timestamp {
 			display: inline;
 		}
+	}
+	span.darken {
+		position: fixed;
+		z-index: 0;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.5);
+		opacity: 0;
+		transition: opacity 0.5s;
+		pointer-events: none;
+	}
+	details[open] + span.darken {
+		opacity: 1;
+		pointer-events: all;
 	}
 </style>
