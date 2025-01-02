@@ -2,10 +2,12 @@
 	import type { ListItem } from '$lib/types';
 	import items from '$lib/stores/items';
 	export let item: ListItem;
+	export let index: number;
 
 	import templates from '$lib/templates';
+	import { confirmAction } from './utils';
 
-	let showModal = false;
+	let sourceItem: HTMLElement;
 
 	function subtract() {
 		item.count--;
@@ -16,40 +18,85 @@
 
 	function deleteItem() {
 		items.update((items) => items.filter((i) => i !== item));
-		showModal = false;
 	}
 
-	function toggleModal() {
-		showModal = !showModal;
+	function handleDrop(event: DragEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+		// console.log('🚀 ~ handleDrop ~ event:', event);
+
+		const dragIndex = parseInt(
+			(event.dataTransfer && event.dataTransfer.getData('text/plain')) || ''
+		);
+		console.log('🚀 ~ handleDrop ~ dragIndex:', dragIndex);
+		const target = event.target as HTMLElement;
+		const dropIndex = target.dataset.index
+			? parseInt(target.dataset.index || '')
+			: parseInt(target.closest('li')?.dataset.index || '');
+		console.log('🚀 ~ handleDrop ~ dropIndex:', dropIndex);
+
+		if (dragIndex === dropIndex) return;
+
+		if (dragIndex !== undefined && dropIndex !== undefined) {
+			items.update((items) => {
+				const newItems = [...items];
+				const [dragItem] = newItems.splice(dragIndex, 1);
+				newItems.splice(dropIndex, 0, dragItem);
+				return newItems;
+			});
+		}
+		target.style.outline = 'none';
+	}
+
+	function dragStart(event: DragEvent) {
+		sourceItem = event.target;
+		event.target.style.opacity = '0.5';
+		event.dataTransfer.setData('text/plain', index);
+	}
+
+	function dragEnd(event: DragEvent) {
+		event.preventDefault();
+		sourceItem.style.opacity = '1';
+	}
+
+	function dragOver(event: DragEvent) {
+		event.preventDefault();
+		event.target.style.outline = '1px solid orange';
+	}
+
+	function dragLeave(event: DragEvent) {
+		event.preventDefault();
+		event.target.style.outline = 'none';
 	}
 </script>
 
-<li>
+<li
+	draggable="true"
+	on:dragstart={dragStart}
+	on:dragleave={dragLeave}
+	on:drop={handleDrop}
+	on:dragend={dragEnd}
+	on:dragover={dragOver}
+	data-index={index}
+>
 	<div class="header">
 		<div class="title">
 			{item.name}
 			<span class="details">
-				{templates[item.type].label} ({item.size}
+				{templates[item.type].label} ({item.size.toLocaleString()}
 				{templates[item.type].unit})
 			</span>
 		</div>
-		<button class="delete" on:click={() => (showModal = true)}>✕</button>
+		<button
+			class="delete"
+			on:click={() => confirmAction('Möchtest du diese Ware wirklich löschen?', deleteItem)}
+			>✕</button
+		>
 	</div>
 	<div class="buttons">
 		<button on:click={() => subtract()}>-</button>
 		<input type="number" class="count" bind:value={item.count} />
 		<button on:click={() => item.count++}>+</button>
-	</div>
-	<div class="modal" class:hidden={!showModal} on:click={toggleModal}>
-		<div class="modal-content">
-			<div class="modal-text">
-				<p>Möchtest du das Item wirklich löschen?</p>
-			</div>
-			<div class="modal-buttons">
-				<button on:click|stopPropagation={deleteItem} class="confirm">Löschen</button>
-				<button on:click|stopPropagation={toggleModal} class="cancel">Abbrechen</button>
-			</div>
-		</div>
 	</div>
 </li>
 
@@ -65,6 +112,11 @@
 		background-color: #eee;
 		box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
 		border-radius: 0.5rem;
+		user-select: none;
+	}
+
+	button {
+		pointer-events: all;
 	}
 	.count {
 		width: clamp(2.25em, 33%, 4em);
@@ -74,6 +126,8 @@
 		display: flex;
 		justify-content: space-between;
 		width: 100%;
+		white-space: nowrap;
+		pointer-events: none;
 	}
 
 	.title {
@@ -110,37 +164,6 @@
 		cursor: pointer;
 		box-sizing: border-box;
 	}
-
-	.modal {
-		position: fixed;
-		z-index: 1;
-		inset: 0;
-		background-color: rgb(0, 0, 0);
-		background-color: rgba(0, 0, 0, 0.4);
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
-
-	.modal.hidden {
-		display: none;
-	}
-
-	.modal-content {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		list-style-type: none;
-		margin: 0.5em 0 0;
-		padding: 1em;
-		border-bottom: 1px solid #ccc;
-		background-color: white;
-		box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.1);
-	}
-	.modal-buttons > button {
-		margin: 0 0.5em;
-		padding: 0.5em 1em;
-	}
 	input[type='number']::-webkit-outer-spin-button,
 	input[type='number']::-webkit-inner-spin-button {
 		-webkit-appearance: none;
@@ -159,6 +182,7 @@
 			flex-direction: row;
 			border-inline: none;
 			margin-top: 0;
+			justify-content: space-between;
 			border-top: none;
 			padding: 0;
 			flex-basis: 48%;
@@ -166,6 +190,7 @@
 		input.count {
 			border: none;
 			font-size: 1em;
+			text-align: right;
 		}
 
 		* {

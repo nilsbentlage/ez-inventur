@@ -2,19 +2,22 @@
 	import items from '$lib/stores/items';
 	import settings from '$lib/stores/settings';
 
+	import { confirmAction } from '$lib/utils';
+
 	import ListItem from '$lib/ListItem.svelte';
 
 	import type { ListItem as ListItemType } from '$lib/types';
 
 	import templates from '$lib/templates';
+	import { onMount } from 'svelte';
 
 	let newName = '';
 	let newType = 'bottle';
 	let newSize = 0.3;
-
 	let sizeLabel = 'Liter';
 
 	let newItemDialog: HTMLDialogElement;
+	let thisDetails: HTMLDetailsElement;
 
 	function addItem(event: Event) {
 		event.preventDefault();
@@ -23,6 +26,7 @@
 		newName = '';
 		newSize = 0.3;
 		newType = 'bottle';
+		sizeLabel = 'Liter';
 		newItemDialog.close();
 	}
 
@@ -53,10 +57,47 @@
 
 	function deleteAll() {
 		items.set([]);
+		thisDetails.open = false;
 	}
 
 	function resetAll() {
 		items.update((items) => items.map((i) => ({ ...i, count: 0 })));
+		thisDetails.open = false;
+	}
+
+	onMount(() => {
+		if ($settings.name === '' || !$settings.name) {
+			$settings.name =
+				prompt(
+					'Auf dem Ausdruck der Inventurliste erscheint dein Name und das aktuelle Datum. Du kannst deinen Namen jetzt eingeben und ihn jederzeit in den Einstellungen anpassen.\n\nDein Name wird ausschließlich in deinem Browser gespeichert.'
+				) || 'Unbekannt';
+		}
+	});
+
+	function exportAs(format: 'csv' | 'mail' = 'csv'): void {
+		let csv = 'Name;Anzahl;Inhalt;Einheit;Typ\n';
+		csv += $items
+			.map(
+				(item) =>
+					`${item.name};${item.count};${item.size.toLocaleString()};${templates[item.type].unit};${templates[item.type].label}`
+			)
+			.join('\n');
+		const blob = new Blob([csv], { type: 'text/csv' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		if (format === 'csv') {
+			a.href = url;
+			a.download = 'inventur.csv';
+		} else if (format === 'mail') {
+			a.target = '_blank';
+			a.href = `mailto:?subject=Inventur am ${date()}&body=${encodeURIComponent(csv)}`;
+		}
+		a.click();
+		URL.revokeObjectURL(url);
+	}
+
+	function print() {
+		window.print();
 	}
 </script>
 
@@ -66,44 +107,61 @@
 		<span class="timestamp">{date()} - {$settings.name}</span>
 	</header>
 	{#if $items.length === 0}
-		<p>Keine Items vorhanden</p>
+		<p>Keine Waren vorhanden</p>
 	{/if}
 	<ul>
-		{#each $items as item}
-			<ListItem bind:item on:remove={() => removeItem(item)} />
+		{#each $items as item, index}
+			<ListItem bind:item on:remove={() => removeItem(item)} {index} />
 		{/each}
 	</ul>
-	<button class="add-button hide-on-paper" on:click={() => newItemDialog.showModal()}>Neue Ware hinzufügen</button
+	<button class="add-button hide-on-paper" on:click={() => newItemDialog.showModal()}
+		>Neue Ware hinzufügen</button
 	>
 	<dialog bind:this={newItemDialog}>
 		<section>
 			<h2>Neue Ware hinzufügen</h2>
 			<form action="" on:submit={addItem}>
-				<input type="text" name="new-name" id="new-name" required bind:value={newName} />
-				<select id="new-type" bind:value={newType} on:change={changeTemplate}>
-					{#each Object.keys(templates) as type}
-						<option value={type}>{templates[type].label}</option>
-					{/each}
-				</select>
-				<label for="new-size" id="new-size">
-					Inhalt:
-					<input
-						type="number"
-						name="new-size"
-						min="0.1"
-						max="30"
-						step="0.01"
-						bind:value={newSize}
-					/>
-					{sizeLabel}</label
-				>
-
-				<button type="button" class="close" on:click={() => newItemDialog.close()}>✕</button>
-				<button type="submit">OK</button>
+				<input
+					type="text"
+					name="new-name"
+					id="new-name"
+					required
+					bind:value={newName}
+					placeholder="Was möchtest du zählen?"
+				/>
+				<div class="flex-row">
+					<select
+						id="new-type"
+						bind:value={newType}
+						on:change={changeTemplate}
+						style="flex: 1 1 50%"
+					>
+						{#each Object.keys(templates) as type}
+							<option value={type}>{templates[type].label}</option>
+						{/each}
+					</select>
+					<label for="new-size" id="new-size" style="flex: 1 1 50%">
+						<input
+							type="number"
+							name="new-size"
+							min="0.1"
+							max="30"
+							step="0.01"
+							bind:value={newSize}
+						/>
+						{sizeLabel}</label
+					>
+				</div>
+				<div class="flex-row">
+					<button type="submit">Anlegen</button>
+					<button type="button" class="close" on:click={() => newItemDialog.close()}
+						>Abbrechen</button
+					>
+				</div>
 			</form>
 		</section>
 	</dialog>
-	<details>
+	<details bind:this={thisDetails}>
 		<summary>Einstellungen</summary>
 		<section class="actions">
 			<h2>Dein Name</h2>
@@ -111,8 +169,21 @@
 		</section>
 		<section class="actions">
 			<h2>Aktionen</h2>
-			<button on:click={deleteAll}> Alle Items löschen </button>
-			<button on:click={resetAll}> Alle Items zurücksetzen </button>
+			<button on:click={() => confirmAction('Möchtest du wirklich alle Waren löschen?', deleteAll)}>
+				Alle Waren löschen
+			</button>
+			<button
+				on:click={() =>
+					confirmAction('Möchtest du wirklich alle Zähler auf 0 zurücksetzen?', resetAll)}
+			>
+				Alle Zähler zurücksetzen
+			</button>
+		</section>
+		<section class="actions">
+			<h2>Export</h2>
+			<button on:click={() => exportAs('csv')}>Als CSV herunterladen</button>
+			<button on:click={() => exportAs('mail')}>Per E-Mail versenden</button>
+			<button on:click={() => print()}>Drucken</button>
 		</section>
 	</details>
 	<span class="darken"></span>
@@ -130,6 +201,10 @@
 		padding-block: 0.25em;
 		width: 100%;
 	}
+	button {
+		cursor: pointer;
+		font-size: 1em;
+	}
 	main {
 		text-align: center;
 		font-family: sans-serif;
@@ -144,8 +219,8 @@
 	}
 	h2 {
 		font-size: 1.25em;
-		margin-block: 0.5em;
-		padding-top: 0;
+		margin-bottom: 0.5em;
+		padding-top: 0.5em;
 		border-top: #ccc 1px solid;
 	}
 	section:first-of-type > h2 {
@@ -158,11 +233,9 @@
 	}
 
 	form {
-		display: grid;
-		grid-template-columns: auto, auto;
-		grid-template-rows: repeat(3, 1fr);
-		grid-column-gap: 0.5em;
-		grid-row-gap: 0.5em;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75em;
 	}
 
 	header {
@@ -172,52 +245,55 @@
 	input,
 	select {
 		padding: 0.5em;
+		font-size: 1em;
 	}
 	[name='name'] {
 		display: block;
 		width: -webkit-fill-available;
 	}
-
-	#new-name {
-		grid-area: 1 / 1 / 2 / 4;
-	}
-	#new-type {
-		grid-area: 2 / 1 / 3 / 2;
-	}
 	#new-size {
-		grid-area: 2 / 2 / 3 / 4;
 		display: flex;
-		justify-content: center;
+		justify-content: flex-start;
 		align-items: center;
 		gap: 0.5em;
-		margin-right: a;
+		margin-right: auto;
 	}
 
-	button[type='submit'] {
-		grid-area: 3 / 1 / 3 / 3;
-		font-size: 1.25em;
-		line-height: 1.5;
+	.flex-row {
+		display: flex;
+		justify-content: space-between;
+		gap: 0.5em;
 	}
 
-	.close {
-		grid-area: 3 / 3 / 3 / 4;
-		aspect-ratio: 1;
-		font-size: 1.25em;
+	dialog button {
 		line-height: 1.5;
+	}
+	dialog button:first-of-type {
+		width: 100%;
 	}
 
 	.add-button {
 		font-size: 1.25em;
+		margin: 0.5em 0 0;
 		padding: 0.5em 1em;
-		border: none;
+		border: 2px dashed #999;
+		stroke-dasharray: 1rem, 1rem;
+		background-color: #eee;
 		border-radius: 0.4em;
+		width: 100%;
+		color: #999;
 	}
 
 	dialog {
 		border: none;
+		width: clamp(20ch, 90%, 50ch);
 	}
 	dialog::backdrop {
 		background-color: rgba(0, 0, 0, 0.5);
+	}
+	dialog h2 {
+		margin-top: 0;
+		padding-top: 0;
 	}
 	#new-size input {
 		width: 3em;
