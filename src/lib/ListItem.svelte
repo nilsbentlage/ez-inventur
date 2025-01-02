@@ -167,5 +167,11 @@
 			border: none;
 			font-size: 1em;
 		}
+
+		* {
+			box-shadow: none !important;
+			background-color: none !important;
+			background: none !important;
+		}
 	}
 </style>

@@ -14,12 +14,16 @@
 
 	let sizeLabel = 'Liter';
 
-	function addItem() {
+	let newItemDialog: HTMLDialogElement;
+
+	function addItem(event: Event) {
+		event.preventDefault();
 		if (newName === '') return;
 		items.update((items) => [...items, { name: newName, count: 0, size: newSize, type: newType }]);
 		newName = '';
 		newSize = 0.3;
 		newType = 'bottle';
+		newItemDialog.close();
 	}
 
 	function removeItem(item: ListItemType) {
@@ -69,13 +73,13 @@
 			<ListItem bind:item on:remove={() => removeItem(item)} />
 		{/each}
 	</ul>
-	<details>
-		<summary>Einstellungen</summary>
+	<button class="add-button hide-on-paper" on:click={() => newItemDialog.showModal()}>Neue Ware hinzufügen</button
+	>
+	<dialog bind:this={newItemDialog}>
 		<section>
 			<h2>Neue Ware hinzufügen</h2>
-			<form action="" on:submit={() => addItem()}>
+			<form action="" on:submit={addItem}>
 				<input type="text" name="new-name" id="new-name" required bind:value={newName} />
-
 				<select id="new-type" bind:value={newType} on:change={changeTemplate}>
 					{#each Object.keys(templates) as type}
 						<option value={type}>{templates[type].label}</option>
@@ -94,9 +98,13 @@
 					{sizeLabel}</label
 				>
 
-				<button>OK</button>
+				<button type="button" class="close" on:click={() => newItemDialog.close()}>✕</button>
+				<button type="submit">OK</button>
 			</form>
 		</section>
+	</dialog>
+	<details>
+		<summary>Einstellungen</summary>
 		<section class="actions">
 			<h2>Dein Name</h2>
 			<input type="text" name="name" bind:value={$settings.name} />
@@ -128,6 +136,7 @@
 		font-size: large;
 		position: relative;
 		margin-inline: 1rem;
+		padding-bottom: 6rem;
 	}
 
 	h1 {
@@ -136,7 +145,7 @@
 	h2 {
 		font-size: 1.25em;
 		margin-block: 0.5em;
-		padding-top: 0.8em;
+		padding-top: 0;
 		border-top: #ccc 1px solid;
 	}
 	section:first-of-type > h2 {
@@ -145,13 +154,13 @@
 	ul {
 		padding: 0;
 		margin: 0;
-		padding-bottom: 4rem;
+		padding-bottom: 2rem;
 	}
 
 	form {
 		display: grid;
-		grid-template-columns: 3fr 2fr 1fr;
-		grid-template-rows: repeat(2, 1fr);
+		grid-template-columns: auto, auto;
+		grid-template-rows: repeat(3, 1fr);
 		grid-column-gap: 0.5em;
 		grid-row-gap: 0.5em;
 	}
@@ -170,28 +179,51 @@
 	}
 
 	#new-name {
-		grid-area: 1 / 1 / 2 / 3;
+		grid-area: 1 / 1 / 2 / 4;
 	}
 	#new-type {
 		grid-area: 2 / 1 / 3 / 2;
 	}
 	#new-size {
-		grid-area: 2 / 2 / 3 / 3;
+		grid-area: 2 / 2 / 3 / 4;
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		gap: 0.5em;
 		margin-right: a;
 	}
+
+	button[type='submit'] {
+		grid-area: 3 / 1 / 3 / 3;
+		font-size: 1.25em;
+		line-height: 1.5;
+	}
+
+	.close {
+		grid-area: 3 / 3 / 3 / 4;
+		aspect-ratio: 1;
+		font-size: 1.25em;
+		line-height: 1.5;
+	}
+
+	.add-button {
+		font-size: 1.25em;
+		padding: 0.5em 1em;
+		border: none;
+		border-radius: 0.4em;
+	}
+
+	dialog {
+		border: none;
+	}
+	dialog::backdrop {
+		background-color: rgba(0, 0, 0, 0.5);
+	}
 	#new-size input {
 		width: 3em;
 		height: 100%;
 		box-sizing: border-box;
 		text-align: center;
-	}
-	button {
-		grid-area: 1 / 3 / 3 / 4;
-		font-size: 1.25em;
 	}
 
 	input[type='number']::-webkit-outer-spin-button,
@@ -234,6 +266,11 @@
 			font-size: 14px;
 			padding-inline: 2em;
 		}
+		* {
+			box-shadow: none !important;
+			background-color: none !important;
+			background: none !important;
+		}
 		details {
 			display: none;
 		}
@@ -246,6 +283,9 @@
 		}
 		.timestamp {
 			display: inline;
+		}
+		.hide-on-paper {
+			display: none;
 		}
 	}
 	span.darken {
