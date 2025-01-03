@@ -72,6 +72,11 @@
 					'Auf dem Ausdruck der Inventurliste erscheint dein Name und das aktuelle Datum. Du kannst deinen Namen jetzt eingeben und ihn jederzeit in den Einstellungen anpassen.\n\nDein Name wird ausschließlich in deinem Browser gespeichert.'
 				) || 'Unbekannt';
 		}
+		localStorage.getItem('firstVisit') ||
+			(confirm(
+				'Willkommen! Da du heute zum ersten Mal hier bist, habe ich dir etwas Demo-Content hinterlasse.\n\nDu solltest die angelegte Liste als CSV exportieren, damit du die für den Import erwartete Struktur verstehst.\n\nKlicke OK wenn dieser Hinweis in Zukunft NICHT angezeigt werden soll!'
+			) &&
+				localStorage.setItem('firstVisit', 'true'));
 	});
 
 	function exportAs(format: 'csv' | 'mail' = 'csv'): void {
@@ -99,6 +104,40 @@
 	function print() {
 		window.print();
 	}
+
+	function importCsv() {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = '.csv';
+		input.onchange = async () => {
+			const file = input.files && input.files[0];
+			if (!file) return;
+			try {
+				const text = await file.text();
+				const lines = text.split('\n');
+				function getTypeTemplate(key: string): string {
+					return Object.keys(templates).find((type) => templates[type].label === key) || 'bottle';
+				}
+				const newItems = lines
+					.slice(1)
+					.map((line) => {
+						const [name, count, size, unit, type] = line.split(';');
+						return {
+							name,
+							count: parseInt(count),
+							size: parseFloat(size),
+							type: getTypeTemplate(type)
+						};
+					})
+					.filter((item) => item.name !== '');
+				items.update((items) => [...items, ...newItems]);
+			} catch (error) {
+				alert('Datei konnte nicht importiert werden: ' + error);
+			}
+			thisDetails.open = false;
+		};
+		input.click();
+	}
 </script>
 
 <main>
@@ -115,7 +154,7 @@
 		{/each}
 	</ul>
 	<button class="add-button hide-on-paper" on:click={() => newItemDialog.showModal()}
-		>Neue Ware hinzufügen</button
+		>+ Neue Ware hinzufügen</button
 	>
 	<dialog bind:this={newItemDialog}>
 		<section>
@@ -145,7 +184,7 @@
 							type="number"
 							name="new-size"
 							min="0.1"
-							max="30"
+							max="200"
 							step="0.01"
 							bind:value={newSize}
 						/>
@@ -178,6 +217,10 @@
 			>
 				Alle Zähler zurücksetzen
 			</button>
+		</section>
+		<section class="actions">
+			<h2>Import</h2>
+			<button on:click={() => importCsv()}>CSV importieren</button>
 		</section>
 		<section class="actions">
 			<h2>Export</h2>
@@ -267,9 +310,7 @@
 
 	dialog button {
 		line-height: 1.5;
-	}
-	dialog button:first-of-type {
-		width: 100%;
+		flex-basis: 50%;
 	}
 
 	.add-button {
@@ -287,6 +328,7 @@
 	dialog {
 		border: none;
 		width: clamp(20ch, 90%, 50ch);
+		border-radius: 0.25rem;
 	}
 	dialog::backdrop {
 		background-color: rgba(0, 0, 0, 0.5);
@@ -324,6 +366,8 @@
 		bottom: 0;
 		left: 0;
 		width: 100%;
+		max-height: 100svh;
+		overflow-y: auto;
 		padding: 1rem;
 		background-color: white;
 		box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.2);
