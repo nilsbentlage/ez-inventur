@@ -23,19 +23,19 @@
 	function handleDrop(event: DragEvent) {
 		event.preventDefault();
 		event.stopPropagation();
-		// console.log('🚀 ~ handleDrop ~ event:', event);
 
 		const dragIndex = parseInt(
 			(event.dataTransfer && event.dataTransfer.getData('text/plain')) || ''
 		);
-		console.log('🚀 ~ handleDrop ~ dragIndex:', dragIndex);
 		const target = event.target as HTMLElement;
 		const dropIndex = target.dataset.index
 			? parseInt(target.dataset.index || '')
 			: parseInt(target.closest('li')?.dataset.index || '');
-		console.log('🚀 ~ handleDrop ~ dropIndex:', dropIndex);
 
-		if (dragIndex === dropIndex) return;
+		if (dragIndex === dropIndex) {
+			target.classList.remove('drag-over');
+			return;
+		}
 
 		if (dragIndex !== undefined && dropIndex !== undefined) {
 			items.update((items) => {
@@ -45,28 +45,32 @@
 				return newItems;
 			});
 		}
-		target.style.outline = 'none';
+		target.classList.remove('drag-over');
+		sourceItem.classList.remove('drag-over');
 	}
 
 	function dragStart(event: DragEvent) {
 		sourceItem = event.target;
 		event.target.style.opacity = '0.5';
-		event.dataTransfer.setData('text/plain', index);
+		event.dataTransfer.setData('text/plain', index.toString());
 	}
 
 	function dragEnd(event: DragEvent) {
 		event.preventDefault();
 		sourceItem.style.opacity = '1';
+		sourceItem.style.removeProperty('margin-top');
 	}
 
 	function dragOver(event: DragEvent) {
 		event.preventDefault();
-		event.target.style.outline = '1px solid orange';
+		const target = event.target as HTMLElement;
+		if (target.nodeName !== 'LI') return;
+		target.classList.add('drag-over');
 	}
 
 	function dragLeave(event: DragEvent) {
 		event.preventDefault();
-		event.target.style.outline = 'none';
+		event.target.classList.remove('drag-over');
 	}
 </script>
 
@@ -113,6 +117,27 @@
 		box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
 		border-radius: 0.5rem;
 		user-select: none;
+		transition: all 0.25s;
+		position: relative;
+	}
+
+	:global(li.drag-over) {
+		margin-top: 1rem !important;
+		outline: 1px solid orange;
+	}
+
+	:global(li.drag-over *) {
+		pointer-events: none !important;
+	}
+	:global(li.drag-over::before) {
+		content: ' ';
+		display: block;
+		width: 100%;
+		left: 0;
+		top: -0.6rem;
+		position: absolute;
+		height: 0.2rem;
+		background-color: orange;
 	}
 
 	button {
