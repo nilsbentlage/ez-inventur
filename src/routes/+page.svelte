@@ -383,8 +383,9 @@
 
 	@media print {
 		main {
-			font-size: 14px;
-			padding-inline: 2em;
+			font-size: 12px;
+			padding-inline: 0;
+			margin-inline: 0;
 		}
 		* {
 			box-shadow: none !important;

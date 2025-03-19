@@ -84,13 +84,13 @@
 	data-index={index}
 >
 	<div class="header">
-		<div class="title">
+		<span class="title">
 			{item.name}
-			<span class="details">
-				{templates[item.type].label} ({item.size.toLocaleString()}
-				{templates[item.type].unit})
-			</span>
-		</div>
+		</span>
+		<span class="details">
+			{templates[item.type].label} ({item.size.toLocaleString()}
+			{templates[item.type].unit})
+		</span>
 		<button
 			class="delete"
 			on:click={() => confirmAction('Möchtest du diese Ware wirklich löschen?', deleteItem)}
@@ -148,8 +148,9 @@
 	}
 	.header {
 		flex-grow: 1;
-		display: flex;
-		justify-content: space-between;
+		display: grid;
+		grid-template-columns: auto 1fr auto;
+		align-items: baseline;
 		width: 100%;
 		white-space: nowrap;
 		pointer-events: none;
@@ -160,9 +161,10 @@
 		padding-block: 0.25em;
 	}
 	.details {
-		font-size: 0.6em;
+		font-size: 0.7em;
 		color: #555;
 		margin-left: 1em;
+		text-align: left;
 	}
 
 	.buttons > button {
@@ -203,6 +205,19 @@
 		.buttons > button {
 			display: none;
 		}
+
+		.header {
+			grid-template-columns: 1fr 1fr;
+		}
+
+		.buttons {
+			display: flex;
+			flex-direction: row;
+			justify-content: flex-end;
+			order: -1;
+			width: 3em;
+			padding-right: 0.5em;
+		}
 		li {
 			flex-direction: row;
 			border-inline: none;
@@ -211,10 +226,18 @@
 			border-top: none;
 			padding: 0;
 			flex-basis: 48%;
+			border-radius: 0;
 		}
 		input.count {
 			border: none;
 			font-size: 1em;
+			text-align: right;
+		}
+		.title {
+			text-align: left;
+		}
+		.details {
+			font-size: 0.9em;
 			text-align: right;
 		}
 
